@@ -124,22 +124,34 @@ def open_shotgrid_page():
 
 # Update versions dropdown function ------------------------
 def populate_versions(shot_code):
-    if project_id and shot_code:
-        # Retrieve Shot ID based on the shot code selected in shot_knob
-        shot_entity = sg.find_one("Shot", [["code", "is", shot_code]], ["id"])
+    selected_version = versions_knob.value()
+    
+    if project_id and selected_version:
+        shot_entity = sg.find_one(
+            'Shot',
+            [['code', 'is', shot_code]],
+            ['id']
+        )
         
         if shot_entity:
-            shot_id = shot_entity["id"]
-            # Fetch versions associated with the selected shot ID
-            versions = sg.find("Version", [["shot", "is", {"type": "Shot", "id": shot_id}]], ["code"])
-            version_codes = [version["code"] for version in versions] if versions else ["No Versions Found"]
-            print("Version List:", version_codes)  # Print to confirm
-            versions_knob.setValues(version_codes)
+            shot_id = shot_entity['id']
+            versions = sg.find(
+                'Version',
+                [['entity', 'is', {'type': 'Shot', 'id': shot_id}]],
+                ['sg_path_to_movie'],
+                [{'column': 'created_at', 'direction': 'asc'}]
+            )
+            
+            version_names = [
+                version['sg_path_to_movie'].split('/')[-1] for version in versions
+            ] if versions else ["No Versions Found"]
         else:
-            print(f"Shot '{shot_code}' not found in ShotGrid.")
-            versions_knob.setValues(["Shot Not Found"])
+            version_names = ["Shot Not Found"]
     else:
-        versions_knob.setValues(["No Versions Found"])
+        version_names = ["Project Not Found"]
+
+    versions_knob.setValues(version_names)
+
 
 # Change function -----------------------------------------
 def command_change():
@@ -266,6 +278,36 @@ def command_change():
                 formatted_label = f"{task_value}"
                 n["label"].setValue(formatted_label)
                 print(f"Label updated to: {formatted_label}")
+
+        # Handle 'versions_knob' changes
+        elif knob_name == "versions_knob":
+            selected_version = n["versions_knob"].value()
+            if selected_version:
+                # Fetch the ShotGrid entity for the selected version (assuming it's a Shot version)
+                shot_name = n["shot_knob"].value()
+                if shot_name:
+                    # Query ShotGrid to get the shot ID based on the shot name
+                    shot_entity = sg.find_one("Shot", [["code", "is", shot_name]], ["id"])
+
+                    if shot_entity:
+                        shot_id = shot_entity["id"]
+                        # Query the Version for the selected version
+                        version_entity = sg.find_one(
+                            'Version',
+                            [['entity', 'is', {'type': 'Shot', 'id': shot_id}]],
+                            ['sg_path_to_movie']
+                        )
+                        
+                        if version_entity and "sg_path_to_movie" in version_entity:
+                            version_path = version_entity["sg_path_to_movie"]
+                            print(f"Selected version path: {version_path}")
+                            
+                            # Access the group node
+
+                            n["file"].setValue(version_path)
+                            print(f"Updated 'giant_mcpo_read' file path to: {version_path}")
+
+
 
 
         # Handle visibility updates
@@ -435,9 +477,15 @@ giant_mpco_input = nuke.nodes.Input(name="giant_mpco_input")
 giant_mpco_read = nuke.nodes.Read(name="giant_mpco_read")
 giant_mpco_output = nuke.nodes.Output(name="giant_mpco_output")
 
+file_knob = giant_mpco_read['file']  # Access the file knob of the Read node
+group_node.addKnob(file_knob)
+
 # Connect the input to the read node and the read node to the output
 giant_mpco_read.setInput(0, giant_mpco_input)  # Input -> Read
 giant_mpco_output.setInput(0, giant_mpco_read)  # Read -> Output
+
+group_node["postage_stamp"].setValue(True)
+
 
 group_node.end()
 
