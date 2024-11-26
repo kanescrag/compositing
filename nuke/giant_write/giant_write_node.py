@@ -39,21 +39,21 @@ def validate_notes_input():
         notes_knob.setValue(valid_value)
 
 # Function to update frame_range visibility based on override_frame_range checkbox
+# Function to update frame_range visibility based on override_frame_range checkbox
 def update_knob_visibility():
     if group_node["override_frame_range"].value():
-        group_node["frame_range"].setEnabled(True)
+        group_node["frame_range"].setEnabled(True)  # Enable the frame_range knob
     else:
-        group_node["frame_range"].setEnabled(False)
+        group_node["frame_range"].setEnabled(False)  # Disable the frame_range knob
+
+# Add a knob changed callback to monitor override_frame_range changes
+nuke.addKnobChanged(update_knob_visibility, node=group_node)
 
 # Function to update write node channels based on the Alpha Data dropdown
 def update_write_node_channels():
     alpha_data_value = group_node["alpha_data"].value()
     # Find the write node inside the group node
     write_node = group_node.node("giant_write_node")
-    
-    #if write_node is None:
-    #    nuke.message("Write node not found. Please check the group setup.")
-    #    return
     
     if alpha_data_value == "Include":
         write_node["channels"].setValue("rgba")  # Set channels to RGBA
@@ -119,7 +119,7 @@ notes_entry_knob = nuke.String_Knob("notes", "Notes")
 group_node.addKnob(notes_entry_knob)
 
 # Add a knob changed callback for the Notes input
-nuke.addKnobChanged(lambda: validate_notes_input(), node=group_node)
+nuke.addKnobChanged(validate_notes_input, node=group_node)
 
 # Divider after Notes
 divider_after_notes = nuke.Text_Knob("divider_after_notes", "")
@@ -140,7 +140,7 @@ alpha_data_knob = nuke.Enumeration_Knob("alpha_data", "Alpha Data", ["Exclude", 
 group_node.addKnob(alpha_data_knob)
 
 # Add a knob changed callback for the Alpha Data dropdown
-nuke.addKnobChanged(lambda: update_write_node_channels(), node=group_node)
+nuke.addKnobChanged(update_write_node_channels, node=group_node)
 
 # Divider
 divider = nuke.Text_Knob("divider", "")
@@ -159,7 +159,7 @@ frame_override_knob.setFlag(nuke.STARTLINE)  # Place on the same line as frame r
 group_node.addKnob(frame_override_knob)
 
 # Add a callback to monitor changes in the group node's knobs
-nuke.addKnobChanged(lambda: update_knob_visibility(), node=group_node)
+nuke.addKnobChanged(update_knob_visibility, node=group_node)
 
 # Update Frame Range Button
 update_frame_range_button = nuke.PyScript_Knob("update_frame_range", "Update Frame Range")
@@ -213,11 +213,9 @@ write_node["file_type"].setValue("exr")  # Set file type to EXR
 write_node["datatype"].setValue("16 bit")  # Set data type to 16-bit
 write_node["compression"].setValue("zip")  # Set compression to ZIP (1 scanline)
 write_node["create_directories"].setValue(True)  # Enable directory creation
-write_node["channels"].setValue("rgb")  # Set initial channels to RGB
-write_node["colorspace"].setValue("linear")  # Set the output transform to linear
-
-# Connect the input node to the write node
+write_node["channels"].setValue("rgb")  # Default channels to RGB
 write_node.setInput(0, pipe_input_node)
-
-# End the group node setup
 group_node.end()
+
+# Trigger an update on knob visibility
+update_knob_visibility()
