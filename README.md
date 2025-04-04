@@ -12,6 +12,11 @@ A collection of tools used for production with the Nuke compositing DCC
 
 - g_create_light_rig: Small node to allow the user to create new set asset instances to connect with the shot hierarchy tool for assignemnt to the Shotgrid database
 
+  ![Hierarchy Node -Shot](https://github.com/user-attachments/assets/7f09c798-b9f7-4e2b-8c02-880016e12efe)
+  ![Hierarcyh Node - Set](https://github.com/user-attachments/assets/58eefbb7-1101-4f00-93a7-97d3e26699da)
+  ![Hierarchy Node Structure](https://github.com/user-attachments/assets/483fc75d-f25d-4222-b995-0c580059b9b0)
+
+
 ## Requirements
 
 - Python
